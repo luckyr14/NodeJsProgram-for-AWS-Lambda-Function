@@ -1,0 +1,89 @@
+console.log('starting function')
+var mailer = require("nodemailer");
+exports.handle = function(e , etx , callback)
+{
+    var api_key = process.env.apiKey;
+    var domain = process.env.domain;
+    var mailgun = require('mailgun-js')({apiKey: api_key , domain: domain});
+    
+    var smtpTransport = mailer.createTransport("SMTP",{
+        service: "gmail",
+        auth: {
+            user: "lakshmanraj169@gmail.com",
+            pass: "lrb@****"
+        }
+    });
+    
+    var data = {
+        from: 'Gmail <lakshmanraj169@gmail.com>',
+        to: 'lakshman.raj@cloudjournee.com',
+        subject: 'from lambda',
+        text: 'testing purpose from lambda nodejs code'
+    };
+    
+    smtpTransport.sendMail(data, function(error, response){
+    if(error){
+        console.log(error);
+    }else{
+        console.log("Message sent: " + response.message);
+    }
+
+    smtpTransport.close();
+});
+    
+    
+    mailgun.message().send(data, function (error, body){callback(error, body);});
+}
+
+=========================================(Writing to dynamodb from lambda working)=====================================================================
+
+console.log('starting function');
+const AWS = require('aws-sdk');
+const docClient = new AWS.DynamoDB.DocumentClient({region:'us-east-1'});
+let index  = function (e , ctx , callback)
+{
+    var params = {
+        Item: {
+            date: Date.now(),
+            meassage: "New Message from Lambda"
+        },
+        TableName: 'lakshmanlambda'
+    };
+   
+    docClient.put(params, function(err , data)
+    {
+        if(err)
+        {
+            callback(err,null);
+        }
+        else
+        {
+            callback(null,data);
+        }
+    });
+}
+exports.handler = index;
+
+===========================================(Reading Data from DynamoDB through lambda)=============================================================
+
+console.log('starting function');
+const AWS = require('aws-sdk');
+const docClient = new AWS.DynamoDB.DocumentClient({region:'us-east-1'});
+
+let index = function (e , ctx , callback)
+{
+    let scanningParameters = {
+        TableName: 'lakshmanlambda',
+        limit: 100
+    };
+    
+    docClient.scan(scanningParameters, function(err, data){
+       if(err){
+           callback(err, null);
+       } 
+       else{
+           callback(null,data);
+       }
+    });
+}
+exports.handler = index;
